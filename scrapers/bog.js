@@ -12,44 +12,45 @@ async function fetchBOGRates() {
 
     const tabs = data.data.tabs;
     
-    for (const tab of tabs) {
-      const title = tab.title;
+    const types = [
+      { name: "BOG (კომერციული)", keyBuy: "dgtlBuyRate", keySell: "dgtlSellRate", tabMatch: "კომერციული" },
+      { name: "BOG (საცალო)", keyBuy: "buyRate", keySell: "sellRate", tabMatch: "კომერციული" },
+      { name: "BOG (საბარათე)", keyBuy: "plcBuyRate", keySell: "plcSellRate", tabMatch: "კომერციული" },
+      { name: "BOG (გზავნილების)", keyBuy: "transferBuyRate", keySell: "transfersellRate", tabMatch: "გზავნილების" },
+      { name: "BOG (საბითუმო)", keyBuy: "buyRate", keySell: "sellRate", tabMatch: "საბითუმო" }
+    ];
+
+    for (const type of types) {
+      const tab = tabs.find(t => t.title.includes(type.tabMatch));
+      if (!tab) continue;
+      
       const list = tab.tabContent?.currenciesList;
-      
-      // Skip if no list or it's empty
       if (!list || list.length === 0) continue;
-      
-      // Skip NBG or options if they somehow appear
-      if (title.includes("ოფციონი") || title.includes("სტატისტიკა") || title.includes("ფორვარდული")) continue;
 
       const find = (ccy) => list.find(r => r.ccy === ccy);
-
       const usd = find("USD");
       const eur = find("EUR");
       const gbp = find("GBP");
       const rub = find("RUB");
 
-      // Some tabs might not have all currencies
       if (!usd && !eur && !gbp && !rub) continue;
 
-      const companyName = `BOG (${title})`;
-
       const newRate = new Rate({
-        company: companyName,
-        usdBuy: usd ? usd.buyRate : null,
-        usdSell: usd ? usd.sellRate : null,
-        eurBuy: eur ? eur.buyRate : null,
-        eurSell: eur ? eur.sellRate : null,
-        gbpBuy: gbp ? gbp.buyRate : null,
-        gbpSell: gbp ? gbp.sellRate : null,
-        rubBuy: rub ? rub.buyRate : null,
-        rubSell: rub ? rub.sellRate : null,
-        date: new Date()
+        company: type.name,
+        usdBuy: usd ? usd[type.keyBuy] : null,
+        usdSell: usd ? usd[type.keySell] : null,
+        eurBuy: eur ? eur[type.keyBuy] : null,
+        eurSell: eur ? eur[type.keySell] : null,
+        gbpBuy: gbp ? gbp[type.keyBuy] : null,
+        gbpSell: gbp ? gbp[type.keySell] : null,
+        rubBuy: rub ? rub[type.keyBuy] : null,
+        rubSell: rub ? rub[type.keySell] : null
       });
 
       await newRate.save();
-      console.log(`✅ [BOG] მონაცემები შეინახა: ${companyName} | USD: ${newRate.usdBuy}/${newRate.usdSell}`);
+      console.log("✅ [BOG] მონაცემები შეინახა: " + type.name + " | USD: " + newRate.usdBuy + "/" + newRate.usdSell);
     }
+
   } catch (error) {
     console.error('❌ [BOG] სკრეპინგის შეცდომა:', error.message);
   }
