@@ -72,7 +72,28 @@ mongoose.connect(MONGODB_URI)
 
 // Basic route to test API
 app.get('/', (req, res) => {
-    res.json({ message: "AllRates Background Worker is running!" });
+    res.json({ message: "AllRates API Server is running!" });
+});
+
+// GET /api/rates/latest - აბრუნებს ყველა კომპანიის ბოლო განახლებულ კურსს
+app.get('/api/rates/latest', async (req, res) => {
+  try {
+    const latestRates = await Rate.aggregate([
+      // ჯერ ვასორტირებთ კლებადობით (ყველაზე ახალი პირველი იყოს)
+      { $sort: { createdAt: -1 } },
+      // ვაჯგუფებთ კომპანიების მიხედვით და თითოეულისთვის ვიღებთ მხოლოდ პირველს (ყველაზე ახალს)
+      { $group: { _id: "$company", latestRecord: { $first: "$$ROOT" } } },
+      // ჯგუფის სტრუქტურის მაგივრად პირდაპირ დოკუმენტებს ვწევთ ზევით
+      { $replaceRoot: { newRoot: "$latestRecord" } },
+      // ვასორტირებთ ანბანის მიხედვით
+      { $sort: { company: 1 } }
+    ]);
+    
+    res.json(latestRates);
+  } catch (error) {
+    console.error("API შეცდომა (latest rates):", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 app.listen(PORT, () => {
