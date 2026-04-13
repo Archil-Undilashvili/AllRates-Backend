@@ -11,44 +11,42 @@ async function fetchBOGRates() {
     }
 
     const tabs = data.data.tabs;
-    
-    const types = [
-      { name: "BOG (კომერციული)", keyBuy: "dgtlBuyRate", keySell: "dgtlSellRate", tabMatch: "კომერციული" },
-      { name: "BOG (საცალო)", keyBuy: "buyRate", keySell: "sellRate", tabMatch: "კომერციული" },
-      { name: "BOG (საბარათე)", keyBuy: "plcBuyRate", keySell: "plcSellRate", tabMatch: "კომერციული" },
-      { name: "BOG (გზავნილების)", keyBuy: "transferBuyRate", keySell: "transfersellRate", tabMatch: "გზავნილების" },
-      { name: "BOG (საბითუმო)", keyBuy: "buyRate", keySell: "sellRate", tabMatch: "საბითუმო" }
+
+    const definitions = [
+      { name: "BOG (კომერციული კურსები)", tab: "კომერციული კურსები", keyBuy: "buyRate", keySell: "sellRate" },
+      { name: "BOG (საბითუმო კურსები)", tab: "საბითუმო კურსები", keyBuy: "dgtlBuyRate", keySell: "dgtlSellRate" },
+      { name: "BOG (გზავნილების კურსი)", tab: "გზავნილების კურსი", keyBuy: "transferBuyRate", keySell: "transfersellRate" },
+      { name: "BOG (საბარათე გადახდების კურსი)", tab: "საბარათე გადახდების კურსი", keyBuy: "plcBuyRate", keySell: "plcSellRate" }
     ];
 
-    for (const type of types) {
-      const tab = tabs.find(t => t.title.includes(type.tabMatch));
-      if (!tab) continue;
-      
-      const list = tab.tabContent?.currenciesList;
-      if (!list || list.length === 0) continue;
+    for (const def of definitions) {
+      const tabData = tabs.find(t => t.title === def.tab);
+      if (!tabData || !tabData.tabContent || !tabData.tabContent.currenciesList) continue;
 
+      const list = tabData.tabContent.currenciesList;
       const find = (ccy) => list.find(r => r.ccy === ccy);
+
       const usd = find("USD");
       const eur = find("EUR");
       const gbp = find("GBP");
       const rub = find("RUB");
 
-      if (!usd && !eur && !gbp && !rub) continue;
+      if (!usd || !usd[def.keyBuy] || !usd[def.keySell]) continue;
 
       const newRate = new Rate({
-        company: type.name,
-        usdBuy: usd ? usd[type.keyBuy] : null,
-        usdSell: usd ? usd[type.keySell] : null,
-        eurBuy: eur ? eur[type.keyBuy] : null,
-        eurSell: eur ? eur[type.keySell] : null,
-        gbpBuy: gbp ? gbp[type.keyBuy] : null,
-        gbpSell: gbp ? gbp[type.keySell] : null,
-        rubBuy: rub ? rub[type.keyBuy] : null,
-        rubSell: rub ? rub[type.keySell] : null
+        company: def.name,
+        usdBuy: usd ? usd[def.keyBuy] : null,
+        usdSell: usd ? usd[def.keySell] : null,
+        eurBuy: eur ? eur[def.keyBuy] : null,
+        eurSell: eur ? eur[def.keySell] : null,
+        gbpBuy: gbp ? gbp[def.keyBuy] : null,
+        gbpSell: gbp ? gbp[def.keySell] : null,
+        rubBuy: rub ? rub[def.keyBuy] : null,
+        rubSell: rub ? rub[def.keySell] : null
       });
 
       await newRate.save();
-      console.log("✅ [BOG] მონაცემები შეინახა: " + type.name + " | USD: " + newRate.usdBuy + "/" + newRate.usdSell);
+      console.log("✅ [BOG] მონაცემები შეინახა: " + def.name + " | USD: " + newRate.usdBuy + "/" + newRate.usdSell);
     }
 
   } catch (error) {
