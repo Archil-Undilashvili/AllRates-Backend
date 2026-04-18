@@ -24,8 +24,8 @@ async function fetchCrystalRates() {
       eurSell: eur ? eur.AMOUNT_SELL : null,
       gbpBuy: gbp ? gbp.AMOUNT_BUY : null,
       gbpSell: gbp ? gbp.AMOUNT_SELL : null,
-      rubBuy: rub ? rub.AMOUNT_BUY : null,
-      rubSell: rub ? rub.AMOUNT_SELL : null,
+      rubBuy: rub ? rub.AMOUNT_BUY / 100 : null,
+      rubSell: rub ? rub.AMOUNT_SELL / 100 : null,
       date: new Date()
     });
 

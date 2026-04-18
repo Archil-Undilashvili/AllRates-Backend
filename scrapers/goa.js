@@ -31,7 +31,7 @@ async function fetchGoaRates() {
       if (currencyText === 'USD') usd = { buy, sell };
       if (currencyText === 'EUR') eur = { buy, sell };
       if (currencyText === 'GBP') gbp = { buy, sell };
-      if (currencyText === 'RUB') rub = { buy, sell };
+      if (currencyText === 'RUB') rub = { buy: buy / 100, sell: sell / 100 };
     });
 
     if (!usd.buy || !eur.buy) {
