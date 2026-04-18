@@ -4,8 +4,8 @@ const Rate = require('../models/Rate');
 async function fetchCredoRates() {
   const methods = [
     { method: "FxRatesCommercial", label: "კომერციული" },
-    { method: "FxRatesForTransfer", label: "გზავნილები" },
-    { method: "FxRatesForCard", label: "საბარათე" },
+    { method: "FxRatesForTransfer", label: "ინტერნეტ ბანკი და გზავნილები" },
+    { method: "FxRatesForCard", label: "ავტომატური ოპერაციები" },
     { method: "FXRatesCardTransactions", label: "საბარათე ოპერაციები" }
   ];
 
