@@ -36,7 +36,7 @@ async function fetchHalykRates() {
       gbpBuy: gbp.buy || null,
       gbpSell: gbp.sell || null,
       rubBuy: rub.buy || null,
-      rubSell: rub.sell || null
+      rubSell: rub.sell || null,
       tryBuy: tryCur.buy || null,
       trySell: tryCur.sell || null
     });

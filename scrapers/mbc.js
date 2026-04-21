@@ -33,7 +33,7 @@ async function fetchMBCRates() {
       gbpBuy: gbp.Buy || null,
       gbpSell: gbp.Sell || null,
       rubBuy: rub.Buy || null,
-      rubSell: rub.Sell || null
+      rubSell: rub.Sell || null,
       tryBuy: tryCur.Buy || null,
       trySell: tryCur.Sell || null
     });

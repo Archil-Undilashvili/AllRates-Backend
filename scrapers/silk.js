@@ -53,7 +53,7 @@ async function fetchSilkRates() {
       gbpSell: gbp.sell || null,
       // RUB არ აქვთ
       rubBuy: null,
-      rubSell: null
+      rubSell: null,
       tryBuy: null,
       trySell: null
     });

@@ -41,7 +41,7 @@ async function fetchTerabankRates() {
       gbpBuy: gbp.teraCrossRateBuy || null,
       gbpSell: gbp.teraCrossRateSell || null,
       rubBuy: rub.teraCrossRateBuy || null,
-      rubSell: rub.teraCrossRateSell || null
+      rubSell: rub.teraCrossRateSell || null,
       tryBuy: tryCur.teraCrossRateBuy || null,
       trySell: tryCur.teraCrossRateSell || null
     });

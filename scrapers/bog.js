@@ -43,7 +43,7 @@ async function fetchBOGRates() {
         gbpBuy: gbp ? gbp[def.keyBuy] : null,
         gbpSell: gbp ? gbp[def.keySell] : null,
         rubBuy: rub ? rub[def.keyBuy] : null,
-        rubSell: rub ? rub[def.keySell] : null
+        rubSell: rub ? rub[def.keySell] : null,
       tryBuy: tryCur ? tryCur[def.keyBuy] : null,
       trySell: tryCur ? tryCur[def.keySell] : null
       });
