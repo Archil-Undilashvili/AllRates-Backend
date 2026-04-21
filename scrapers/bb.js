@@ -32,6 +32,8 @@ async function fetchBBRates() {
       gbpSell: getRate(sellData, 'GBP'),
       rubBuy: getRate(buyData, 'RUB'),
       rubSell: getRate(sellData, 'RUB'),
+      tryBuy: getRate(buyData, 'TRY'),
+      trySell: getRate(sellData, 'TRY'),
       date: new Date()
     });
 

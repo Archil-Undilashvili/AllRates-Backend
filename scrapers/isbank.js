@@ -17,6 +17,7 @@ async function fetchIsBankRates() {
     let eur = { buy: null, sell: null };
     let gbp = { buy: null, sell: null };
     let rub = { buy: null, sell: null };
+    let tryCur = { buy: null, sell: null };
 
     // ყველა ვალუტის ბლოკი
     // ვპოულობთ .bank-values მშობლებს, რომლებშიც წერია ვალუტის სახელი
@@ -68,6 +69,8 @@ async function fetchIsBankRates() {
       gbpSell: gbp.sell || null,
       rubBuy: rub.buy || null,
       rubSell: rub.sell || null
+      tryBuy: tryCur.buy || null,
+      trySell: tryCur.sell || null
     });
 
     await newRate.save();

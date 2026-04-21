@@ -35,6 +35,7 @@ async function fetchCredoRates() {
       const eur = find("EUR");
       const gbp = find("GBP");
       const rub = find("RUB");
+    const tryCur = find("TRY");
 
       const companyName = `Credo (${item.label})`;
 
@@ -48,6 +49,8 @@ async function fetchCredoRates() {
         gbpSell: gbp ? gbp.sell : null,
         rubBuy: rub ? rub.buy : null,
         rubSell: rub ? rub.sell : null,
+      tryBuy: tryCur ? tryCur.buy : null,
+      trySell: tryCur ? tryCur.sell : null,
         date: new Date()
       });
 

@@ -12,6 +12,7 @@ async function fetchValutoRates() {
     const gbp = currencies["GBPGEL"];
     // Valuto API uses 'RURGEL' instead of RUBGEL
     const rub = currencies["RURGEL"];
+    const tryCur = currencies["TRYGEL"];
 
     const newRate = new Rate({
       company: 'Valuto',
@@ -23,6 +24,8 @@ async function fetchValutoRates() {
       gbpSell: gbp ? gbp.sell : null,
       rubBuy: rub ? rub.buy : null,
       rubSell: rub ? rub.sell : null,
+      tryBuy: tryCur ? tryCur.buy : null,
+      trySell: tryCur ? tryCur.sell : null,
       date: new Date()
     });
 

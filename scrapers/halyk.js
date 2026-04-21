@@ -21,6 +21,7 @@ async function fetchHalykRates() {
     const eur = rates.find(c => c.title === "EUR") || {};
     const gbp = rates.find(c => c.title === "GBP") || {};
     const rub = rates.find(c => c.title === "RUB") || {};
+    const tryCur = rates.find(c => c.title === "tryCur") || {};
 
     if (!usd.buy || !eur.buy) {
       throw new Error("Halyk Bank - USD ან EUR კურსები ვერ მოიძებნა.");
@@ -36,6 +37,8 @@ async function fetchHalykRates() {
       gbpSell: gbp.sell || null,
       rubBuy: rub.buy || null,
       rubSell: rub.sell || null
+      tryBuy: tryCur.buy || null,
+      trySell: tryCur.sell || null
     });
 
     await newRate.save();

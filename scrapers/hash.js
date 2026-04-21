@@ -21,6 +21,7 @@ async function fetchHashRates() {
     const eur = rates.find(r => r.fromCurrency === "EUR" && r.toCurrency === "GEL") || {};
     const gbp = rates.find(r => r.fromCurrency === "GBP" && r.toCurrency === "GEL") || {};
     const rub = rates.find(r => r.fromCurrency === "RUB" && r.toCurrency === "GEL") || {};
+    const tryCur = rates.find(r => r.fromCurrency === "tryCur" && r.toCurrency === "GEL") || {};
 
     // თუ USD ან EUR არ არის, ე.ი. რაღაც შეიცვალა
     if (!usd.buy || !eur.buy) {
@@ -37,6 +38,8 @@ async function fetchHashRates() {
       gbpSell: gbp.sell || null,
       rubBuy: rub.buy || null,
       rubSell: rub.sell || null
+      tryBuy: tryCur.buy || null,
+      trySell: tryCur.sell || null
     });
 
     await newRate.save();

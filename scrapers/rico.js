@@ -21,7 +21,9 @@ async function fetchRicoRates() {
       gbpBuy: getRate('GBP', 'from'),
       gbpSell: getRate('GBP', 'to'),
       rubBuy: getRate('RUR', 'from'), // Rico uses RUR instead of RUB in ID
-      rubSell: getRate('RUR', 'to'),
+      rubSell: getRate('RUR',
+      tryBuy: getRate('TRY',
+      trySell: getRate('TRY', 'to'),
       date: new Date()
     });
 

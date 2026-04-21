@@ -13,6 +13,7 @@ async function fetchKursiRates() {
     const eur = find("GEL", "EUR");
     const gbp = find("GEL", "GBP"); // Kursige API doesn't seem to have GBP based on initial check, but we add it safely
     const rub = find("GEL", "RUB");
+    const tryCur = find("GEL", "tryCur");
 
     const newRate = new Rate({
       company: 'Kursige',
@@ -24,6 +25,8 @@ async function fetchKursiRates() {
       gbpSell: gbp ? gbp.sellRate : null,
       rubBuy: rub ? rub.buyRate : null,
       rubSell: rub ? rub.sellRate : null,
+      tryBuy: tryCur ? tryCur.buyRate : null,
+      trySell: tryCur ? tryCur.sellRate : null,
       date: new Date()
     });
 

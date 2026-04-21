@@ -11,7 +11,9 @@ const rateSchema = new mongoose.Schema({
   gbpBuy: Number,
   gbpSell: Number,
   rubBuy: Number,
-  rubSell: Number
+  rubSell: Number,
+  tryBuy: Number,
+  trySell: Number
 }, { 
   timestamps: true 
 });

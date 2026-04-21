@@ -25,6 +25,7 @@ async function fetchGiroRates() {
     const eur = getRate('EUR');
     const gbp = getRate('GBP');
     let rub = getRate('RUB');
+    let tryCur = getRate("TRY");
 
     // Giro displays RUB per 100 units (e.g. 3.38). We divide by 100 to match others (0.0338).
     if (rub.buy && rub.buy > 1) {
@@ -42,6 +43,8 @@ async function fetchGiroRates() {
       gbpSell: gbp.sell,
       rubBuy: rub.buy,
       rubSell: rub.sell,
+      tryBuy: tryCur.buy,
+      trySell: tryCur.sell,
       date: new Date()
     });
 

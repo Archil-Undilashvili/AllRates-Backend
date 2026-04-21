@@ -22,6 +22,7 @@ async function fetchMBCRates() {
     const eur = rates.find(r => r.FromCcy === "EUR" && r.ToCcy === "GEL") || {};
     const gbp = rates.find(r => r.FromCcy === "GBP" && r.ToCcy === "GEL") || {};
     const rub = rates.find(r => r.FromCcy === "RUB" && r.ToCcy === "GEL") || {};
+    const tryCur = rates.find(r => r.FromCcy === "tryCur" && r.ToCcy === "GEL") || {};
 
     const newRate = new Rate({
       company: 'MBC',
@@ -33,6 +34,8 @@ async function fetchMBCRates() {
       gbpSell: gbp.Sell || null,
       rubBuy: rub.Buy || null,
       rubSell: rub.Sell || null
+      tryBuy: tryCur.Buy || null,
+      trySell: tryCur.Sell || null
     });
 
     await newRate.save();

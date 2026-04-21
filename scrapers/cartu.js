@@ -34,6 +34,7 @@ async function fetchCartuRates() {
     const eur = ratesData.eur;
     const gbp = ratesData.gbp;
     const rub = ratesData.rub;
+    const tryCur = ratesData.try;
 
     // Check if we found at least USD or EUR
     if (!usd.buy && !eur.buy) {
@@ -50,6 +51,8 @@ async function fetchCartuRates() {
       gbpSell: gbp.sell || null,
       rubBuy: rub.buy || null,
       rubSell: rub.sell || null,
+      tryBuy: tryCur.buy || null,
+      trySell: tryCur.sell || null,
       date: new Date()
     });
 

@@ -30,6 +30,7 @@ async function fetchBOGRates() {
       const eur = find("EUR");
       const gbp = find("GBP");
       const rub = find("RUB");
+    const tryCur = find("TRY");
 
       if (!usd || !usd[def.keyBuy] || !usd[def.keySell]) continue;
 
@@ -43,6 +44,8 @@ async function fetchBOGRates() {
         gbpSell: gbp ? gbp[def.keySell] : null,
         rubBuy: rub ? rub[def.keyBuy] : null,
         rubSell: rub ? rub[def.keySell] : null
+      tryBuy: tryCur ? tryCur[def.keyBuy] : null,
+      trySell: tryCur ? tryCur[def.keySell] : null
       });
 
       await newRate.save();

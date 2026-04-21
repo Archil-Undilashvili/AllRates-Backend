@@ -22,6 +22,7 @@ async function fetchInteliExpressRates() {
     const eur = getRate("EUR");
     const gbp = getRate("GBP");
     const rub = getRate("RUB");
+    const tryCur = getRate("TRY");
 
     if (!usd || !eur) {
       throw new Error("Parsing InteliExpress failed. Raw text might have changed.");
@@ -37,6 +38,8 @@ async function fetchInteliExpressRates() {
       gbpSell: gbp ? gbp.sell : null,
       rubBuy: rub ? rub.buy : null,
       rubSell: rub ? rub.sell : null,
+      tryBuy: tryCur ? tryCur.buy : null,
+      trySell: tryCur ? tryCur.sell : null,
       date: new Date()
     });
 

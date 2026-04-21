@@ -26,6 +26,7 @@ async function fetchTerabankRates() {
     const eur = rates.find(r => r.iso === "EUR") || {};
     const gbp = rates.find(r => r.iso === "GBP") || {};
     const rub = rates.find(r => r.iso === "RUB") || {};
+    const tryCur = rates.find(r => r.iso === "TRY") || {};
 
     if (!usd.teraCrossRateBuy || !eur.teraCrossRateBuy) {
       throw new Error("Terabank - USD ან EUR კურსები არ მოიძებნა API-ში");
@@ -41,6 +42,8 @@ async function fetchTerabankRates() {
       gbpSell: gbp.teraCrossRateSell || null,
       rubBuy: rub.teraCrossRateBuy || null,
       rubSell: rub.teraCrossRateSell || null
+      tryBuy: tryCur.teraCrossRateBuy || null,
+      trySell: tryCur.teraCrossRateSell || null
     });
 
     await newRate.save();

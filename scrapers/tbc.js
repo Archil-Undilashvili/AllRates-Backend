@@ -18,6 +18,7 @@ async function fetchTBCRates() {
     const eur = find("EUR");
     const gbp = find("GBP");
     const rub = find("RUB");
+    const tryCur = find("TRY");
 
     if (!usd && !eur && !gbp && !rub) {
       throw new Error("No currencies found in TBC API");
@@ -33,6 +34,8 @@ async function fetchTBCRates() {
       gbpSell: gbp ? gbp.sellRate : null,
       rubBuy: rub ? rub.buyRate : null,
       rubSell: rub ? rub.sellRate : null,
+      tryBuy: tryCur ? tryCur.buyRate : null,
+      trySell: tryCur ? tryCur.sellRate : null,
       date: new Date()
     });
 

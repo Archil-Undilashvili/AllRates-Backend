@@ -15,6 +15,7 @@ async function fetchCrystalRates() {
     const eur = find("EUR");
     const gbp = find("GBP");
     const rub = find("RUB");
+    const tryCur = find("TRY");
 
     const newRate = new Rate({
       company: 'Crystal',
@@ -26,6 +27,8 @@ async function fetchCrystalRates() {
       gbpSell: gbp ? gbp.AMOUNT_SELL : null,
       rubBuy: rub ? rub.AMOUNT_BUY / 100 : null,
       rubSell: rub ? rub.AMOUNT_SELL / 100 : null,
+      tryBuy: tryCur ? tryCur.AMOUNT_SELL / 100 : null,
+      trySell: tryCur ? tryCur.AMOUNT_SELL / 100 : null,
       date: new Date()
     });
 

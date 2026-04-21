@@ -58,6 +58,8 @@ async function fetchLibertyRates() {
       gbpSell: ratesData.Commercial.gbp.sell || null,
       rubBuy: ratesData.Commercial.rub.buy || null,
       rubSell: ratesData.Commercial.rub.sell || null,
+      tryBuy: ratesData.Commercial.try.buy || null,
+      trySell: ratesData.Commercial.try.sell || null,
       date: new Date()
     });
     await newCommRate.save();
@@ -74,6 +76,8 @@ async function fetchLibertyRates() {
       gbpSell: ratesData.Internet.gbp.sell || null,
       rubBuy: ratesData.Internet.rub.buy || null,
       rubSell: ratesData.Internet.rub.sell || null,
+      tryBuy: ratesData.Internet.try.buy || null,
+      trySell: ratesData.Internet.try.sell || null,
       date: new Date()
     });
     await newIntRate.save();

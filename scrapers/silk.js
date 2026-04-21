@@ -54,6 +54,8 @@ async function fetchSilkRates() {
       // RUB არ აქვთ
       rubBuy: null,
       rubSell: null
+      tryBuy: null,
+      trySell: null
     });
 
     await newRate.save();

@@ -18,6 +18,7 @@ async function fetchGoaRates() {
     let eur = { buy: null, sell: null };
     let gbp = { buy: null, sell: null };
     let rub = { buy: null, sell: null };
+    let tryCur = { buy: null, sell: null };
 
     // ვძებნით შესაბამის ვალუტებს HTML-ში
     $('td.currname').each((i, el) => {
@@ -32,6 +33,7 @@ async function fetchGoaRates() {
       if (currencyText === 'EUR') eur = { buy, sell };
       if (currencyText === 'GBP') gbp = { buy, sell };
       if (currencyText === 'RUB') rub = { buy: buy / 100, sell: sell / 100 };
+      if (currencyText === 'TRY') tryCur = { buy, sell };
     });
 
     if (!usd.buy || !eur.buy) {
@@ -47,7 +49,9 @@ async function fetchGoaRates() {
       gbpBuy: gbp.buy,
       gbpSell: gbp.sell,
       rubBuy: rub.buy,
-      rubSell: rub.sell
+      rubSell: rub.sell,
+      tryBuy: tryCur.buy,
+      trySell: tryCur.sell
     });
 
     await newRate.save();
