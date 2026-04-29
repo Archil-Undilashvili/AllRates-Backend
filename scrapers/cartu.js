@@ -13,17 +13,17 @@ async function fetchCartuRates() {
     });
 
     const $ = cheerio.load(html);
-    const ratesData = { usd: {}, eur: {}, gbp: {}, rub: {} };
+    const ratesData = { usd: {}, eur: {}, gbp: {}, rub: {}, try: {} };
 
     // Look for rows in currency rates
     $('.currency-rates__row').each((i, el) => {
       const row = $(el);
-      const textDivs = row.find('div');
+      const textDivs = row.children('div');
       
       if (textDivs.length >= 3) {
         const currency = textDivs.eq(0).text().trim().toLowerCase();
         
-        if (['usd', 'eur', 'gbp', 'rub'].includes(currency)) {
+        if (['usd', 'eur', 'gbp', 'rub', 'try'].includes(currency)) {
           ratesData[currency].buy = parseFloat(textDivs.eq(1).text().trim());
           ratesData[currency].sell = parseFloat(textDivs.eq(2).text().trim());
         }
@@ -52,8 +52,7 @@ async function fetchCartuRates() {
       rubBuy: rub.buy || null,
       rubSell: rub.sell || null,
       tryBuy: tryCur.buy || null,
-      trySell: tryCur.sell || null,
-      date: new Date()
+      trySell: tryCur.sell || null
     });
 
     await newRate.save();
