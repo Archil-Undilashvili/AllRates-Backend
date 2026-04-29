@@ -8,8 +8,8 @@ async function fetchLibertyRates() {
     const $ = cheerio.load(html);
 
     const ratesData = {
-      Commercial: { usd: {}, eur: {}, gbp: {}, rub: {} },
-      Internet: { usd: {}, eur: {}, gbp: {}, rub: {} }
+      Commercial: { usd: {}, eur: {}, gbp: {}, rub: {}, try: {} },
+      Internet: { usd: {}, eur: {}, gbp: {}, rub: {}, try: {} }
     };
 
     $('.currency-rates__row.js-homepage__currency-item').each((i, el) => {
@@ -17,7 +17,7 @@ async function fetchLibertyRates() {
       const currencyLabel = row.find('.caps.medium').text().trim().toLowerCase();
       
       // If it's not one of our target currencies, skip
-      if (!['usd', 'eur', 'gbp', 'rub'].includes(currencyLabel)) return;
+      if (!['usd', 'eur', 'gbp', 'rub', 'try'].includes(currencyLabel)) return;
 
       // The items are:
       // eq(0): NBG Rate details
@@ -59,8 +59,7 @@ async function fetchLibertyRates() {
       rubBuy: ratesData.Commercial.rub.buy || null,
       rubSell: ratesData.Commercial.rub.sell || null,
       tryBuy: ratesData.Commercial.try.buy || null,
-      trySell: ratesData.Commercial.try.sell || null,
-      date: new Date()
+      trySell: ratesData.Commercial.try.sell || null
     });
     await newCommRate.save();
     console.log(`✅ [Liberty] მონაცემები შეინახა: Liberty (კომერციული) | USD: ${newCommRate.usdBuy}/${newCommRate.usdSell}`);
@@ -77,8 +76,7 @@ async function fetchLibertyRates() {
       rubBuy: ratesData.Internet.rub.buy || null,
       rubSell: ratesData.Internet.rub.sell || null,
       tryBuy: ratesData.Internet.try.buy || null,
-      trySell: ratesData.Internet.try.sell || null,
-      date: new Date()
+      trySell: ratesData.Internet.try.sell || null
     });
     await newIntRate.save();
     console.log(`✅ [Liberty] მონაცემები შეინახა: Liberty (ინტერნეტ ბანკი) | USD: ${newIntRate.usdBuy}/${newIntRate.usdSell}`);
