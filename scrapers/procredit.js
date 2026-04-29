@@ -6,9 +6,10 @@ async function fetchProcreditRates() {
   try {
     const url = "https://www.procreditbank.ge/ge/exchange";
     const { data: html } = await axios.get(url, {
-      timeout: 30000, // Important, site is slow
+      timeout: 60000,
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
       }
     });
 
@@ -24,10 +25,13 @@ async function fetchProcreditRates() {
       const buy = buyText ? parseFloat(buyText) : null;
       const sell = sellText ? parseFloat(sellText) : null;
 
-      if (imgSrc.includes('-usa.png')) usd = { buy, sell };
-      if (imgSrc.includes('-euro.png')) eur = { buy, sell };
-      if (imgSrc.includes('-eng.png')) gbp = { buy, sell };
-      if (imgSrc.includes('-rus.png')) rub = { buy, sell };
+      // Only set if we actually parsed a number
+      if (buy && sell) {
+        if (imgSrc.includes('-usa.png')) usd = { buy, sell };
+        if (imgSrc.includes('-euro.png')) eur = { buy, sell };
+        if (imgSrc.includes('-eng.png')) gbp = { buy, sell };
+        if (imgSrc.includes('-rus.png')) rub = { buy, sell };
+      }
     });
 
     if (!usd.buy || !eur.buy) {
