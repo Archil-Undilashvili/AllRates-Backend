@@ -24,6 +24,7 @@ const fetchTerabankRates = require('./scrapers/tera');
 const fetchHalykRates = require('./scrapers/halyk');
 const fetchIsBankRates = require('./scrapers/isbank');
 const fetchSilkRates = require('./scrapers/silk');
+const fetchProcreditRates = require("./scrapers/procredit");
 const Rate = require('./models/Rate');
 
 const app = express();
@@ -62,7 +63,8 @@ mongoose.connect(MONGODB_URI)
         fetchTerabankRates(),
         fetchHalykRates(),
         fetchIsBankRates(),
-        fetchSilkRates()
+        fetchSilkRates(),
+        fetchProcreditRates()
       ]);
       
       console.log('✅ კურსების განახლება დასრულდა!');
