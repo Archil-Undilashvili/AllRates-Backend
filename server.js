@@ -28,9 +28,21 @@ const fetchProcreditRates = require("./scrapers/procredit");
 const fetchLeaderRates = require("./scrapers/leader");
 const Rate = require('./models/Rate');
 
+// Auth Routes-ის იმპორტი
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const dashboardRoutes = require('./routes/dashboard');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ============================================
+// ავტორიზაციის და რეგისტრაციის სისტემის მიბმა
+// ============================================
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
