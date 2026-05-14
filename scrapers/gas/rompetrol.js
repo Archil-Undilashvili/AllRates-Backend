@@ -2,6 +2,13 @@ const GasPrice = require('../../models/GasPrice');
 const { getHtml, stripTags, toNumber, logSaved, logError } = require('./utils');
 
 const ROMPETROL_URL = 'https://www.rompetrol.ge/';
+const ROMPETROL_FALLBACK_PRICES = [
+  { product: 'efix სუპერი', price: 4.22, currency: 'GEL' },
+  { product: 'efix ევრო პრემიუმი', price: 3.78, currency: 'GEL' },
+  { product: 'ევრო რეგულარი', price: 3.59, currency: 'GEL' },
+  { product: 'efix ევრო დიზელი', price: 4.32, currency: 'GEL' },
+  { product: 'ევრო დიზელი', price: 4.27, currency: 'GEL' }
+];
 
 function parseRompetrolFuelPrices(html) {
   const priceSectionMatch = String(html).match(/<a\s+id=["']pricelist["'][^>]*><\/a>([\s\S]*?)<\/section>/i);
@@ -49,6 +56,22 @@ async function fetchRompetrolGasPrices() {
     return doc;
   } catch (error) {
     logError('Rompetrol', error);
+
+    if (error.response && error.response.status === 403) {
+      const doc = new GasPrice({
+        company: 'Rompetrol',
+        source: ROMPETROL_URL,
+        prices: ROMPETROL_FALLBACK_PRICES.map((price) => ({
+          ...price,
+          details: { fallback: true, reason: 'Rompetrol returned 403 from server environment' }
+        }))
+      });
+
+      await doc.save();
+      console.log('⚠️ [Gas/Rompetrol] გამოყენებულია fallback ფასები, რადგან production request ბლოკირდება 403-ით');
+      return doc;
+    }
+
     throw error;
   }
 }
