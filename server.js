@@ -26,12 +26,14 @@ const fetchIsBankRates = require('./scrapers/isbank');
 const fetchSilkRates = require('./scrapers/silk');
 const fetchProcreditRates = require("./scrapers/procredit");
 const fetchLeaderRates = require("./scrapers/leader");
+const fetchAllGasPrices = require('./scrapers/gas');
 const Rate = require('./models/Rate');
 
 // Auth Routes-ის იმპორტი
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const dashboardRoutes = require('./routes/dashboard');
+const gasRoutes = require('./routes/gas');
 
 const app = express();
 app.use(cors());
@@ -43,6 +45,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/gas', gasRoutes);
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -82,6 +85,13 @@ mongoose.connect(MONGODB_URI)
       ]);
       
       console.log('✅ კურსების განახლება დასრულდა!');
+    });
+
+    // Fuel prices cron job (runs every 10 minutes)
+    cron.schedule('*/10 * * * *', async () => {
+      console.log('⛽ ვიწყებ საწვავის ფასების განახლებას (Cron Job)...');
+      await fetchAllGasPrices();
+      console.log('✅ საწვავის ფასების განახლება დასრულდა!');
     });
   })
   .catch(err => console.error('❌ MongoDB-სთან დაკავშირების შეცდომა:', err));
