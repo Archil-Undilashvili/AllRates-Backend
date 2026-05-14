@@ -42,7 +42,7 @@ async function fetchRompetrolGasPrices() {
     return doc;
   } catch (error) {
     logError('Rompetrol', error);
-    return null;
+    throw error;
   }
 }
 

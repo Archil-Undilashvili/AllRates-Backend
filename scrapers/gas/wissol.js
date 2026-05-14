@@ -44,7 +44,7 @@ async function fetchWissolGasPrices() {
     return doc;
   } catch (error) {
     logError('Wissol', error);
-    return null;
+    throw error;
   }
 }
 

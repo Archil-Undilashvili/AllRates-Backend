@@ -91,7 +91,7 @@ async function fetchPortalGasPrices() {
     return doc;
   } catch (error) {
     logError('Portal', error);
-    return null;
+    throw error;
   }
 }
 

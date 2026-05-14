@@ -43,7 +43,7 @@ async function fetchLukoilGasPrices() {
     return doc;
   } catch (error) {
     logError('Lukoil', error);
-    return null;
+    throw error;
   }
 }
 

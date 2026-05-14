@@ -5,19 +5,37 @@ const fetchRompetrolGasPrices = require('./rompetrol');
 const fetchLukoilGasPrices = require('./lukoil');
 const fetchPortalGasPrices = require('./portal');
 
-async function fetchAllGasPrices() {
-  const results = await Promise.allSettled([
-    fetchGulfGasPrices(),
-    fetchWissolGasPrices(),
-    fetchSocarGasPrices(),
-    fetchRompetrolGasPrices(),
-    fetchLukoilGasPrices(),
-    fetchPortalGasPrices()
-  ]);
+const SCRAPERS = [
+  { company: 'Gulf', fetcher: fetchGulfGasPrices },
+  { company: 'Wissol', fetcher: fetchWissolGasPrices },
+  { company: 'Socar', fetcher: fetchSocarGasPrices },
+  { company: 'Rompetrol', fetcher: fetchRompetrolGasPrices },
+  { company: 'Lukoil', fetcher: fetchLukoilGasPrices },
+  { company: 'Portal', fetcher: fetchPortalGasPrices }
+];
 
-  return results
-    .filter((result) => result.status === 'fulfilled' && result.value)
-    .map((result) => result.value);
+async function fetchAllGasPrices() {
+  const results = await Promise.allSettled(SCRAPERS.map((scraper) => scraper.fetcher()));
+
+  const savedRecords = [];
+  const failures = [];
+
+  results.forEach((result, index) => {
+    const company = SCRAPERS[index].company;
+
+    if (result.status === 'fulfilled' && result.value) {
+      savedRecords.push(result.value);
+      return;
+    }
+
+    failures.push({
+      company,
+      error: result.reason ? result.reason.message : 'Unknown scraper error'
+    });
+  });
+
+  savedRecords.failures = failures;
+  return savedRecords;
 }
 
 module.exports = fetchAllGasPrices;

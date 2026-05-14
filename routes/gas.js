@@ -29,6 +29,8 @@ async function refreshGasPrices(req, res) {
       message: 'Gas prices refreshed',
       savedCount: savedRecords.length,
       companies: savedRecords.map((record) => record.company),
+      failedCount: savedRecords.failures ? savedRecords.failures.length : 0,
+      failures: savedRecords.failures || [],
       records: savedRecords
     });
   } catch (error) {

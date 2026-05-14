@@ -44,7 +44,7 @@ async function fetchSocarGasPrices() {
     return doc;
   } catch (error) {
     logError('Socar', error);
-    return null;
+    throw error;
   }
 }
 

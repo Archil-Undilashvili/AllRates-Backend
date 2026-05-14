@@ -45,7 +45,7 @@ async function fetchGulfGasPrices() {
     return doc;
   } catch (error) {
     logError('Gulf', error);
-    return null;
+    throw error;
   }
 }
 
