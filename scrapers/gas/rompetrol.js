@@ -28,7 +28,14 @@ function parseRompetrolFuelPrices(html) {
 
 async function fetchRompetrolGasPrices() {
   try {
-    const html = await getHtml(ROMPETROL_URL);
+    const html = await getHtml(ROMPETROL_URL, {
+      headers: {
+        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'accept-language': 'ka-GE,ka;q=0.9,en-US;q=0.8,en;q=0.7',
+        referer: 'https://www.rompetrol.ge/',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+      }
+    });
     const prices = parseRompetrolFuelPrices(html);
 
     const doc = new GasPrice({
