@@ -101,6 +101,14 @@ app.get('/', (req, res) => {
     res.json({ message: "AllRates API Server is running!" });
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'allrates-backend-api',
+    checkedAt: new Date().toISOString()
+  });
+});
+
 // GET /api/rates/latest - აბრუნებს ყველა კომპანიის ბოლო განახლებულ კურსს
 app.get('/api/rates/latest', async (req, res) => {
   try {
