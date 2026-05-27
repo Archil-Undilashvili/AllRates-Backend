@@ -91,6 +91,12 @@ async function fetchRowsFromSheetsFallback() {
       secondaryCurrencyCode: 'EUR',
       buyRate: value('EURGEL (Buy)'),
       sellRate: value('EURGEL (Sell)')
+    },
+    {
+      baseCurrencyCode: 'GEL',
+      secondaryCurrencyCode: 'RUB',
+      buyRate: value('RUBGEL (Buy)'),
+      sellRate: value('RUBGEL (Sell)')
     }
   ];
 }

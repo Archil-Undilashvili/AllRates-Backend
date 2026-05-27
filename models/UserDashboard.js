@@ -9,16 +9,16 @@ const dashboardSchema = new mongoose.Schema({
     index: true
   },
   filters: {
-    company: { type: Boolean, default: true },
-    forex: { type: Boolean, default: true },
-    crypto: { type: Boolean, default: true },
-    asset: { type: Boolean, default: true }
+    type: mongoose.Schema.Types.Mixed,
+    default: () => ({ 'company-usd': true })
   },
   items: {
-    company: { type: [String], default: [] },
-    forex: { type: [String], default: [] },
-    crypto: { type: [String], default: [] },
-    asset: { type: [String], default: [] }
+    type: mongoose.Schema.Types.Mixed,
+    default: () => ({})
+  },
+  order: {
+    type: [String],
+    default: () => []
   }
 }, { timestamps: true });
 

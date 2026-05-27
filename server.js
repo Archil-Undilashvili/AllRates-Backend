@@ -26,6 +26,14 @@ const fetchIsBankRates = require('./scrapers/isbank');
 const fetchSilkRates = require('./scrapers/silk');
 const fetchProcreditRates = require("./scrapers/procredit");
 const fetchLeaderRates = require("./scrapers/leader");
+const fetchSmartiRates = require("./scrapers/smarti");
+const fetchCentralRates = require("./scrapers/central");
+const fetchGeorgianCreditRates = require("./scrapers/georgiancredit");
+const fetchTbmcRates = require("./scrapers/tbmc");
+const fetchBermeliRates = require("./scrapers/bermeli");
+const fetchAlphaExpressRates = require("./scrapers/alphaexpress");
+const fetchScappRates = require("./scrapers/scapp");
+const fetchExpressLombardRates = require("./scrapers/expresslombard");
 const fetchAllGasPrices = require('./scrapers/gas');
 const Rate = require('./models/Rate');
 
@@ -81,17 +89,27 @@ mongoose.connect(MONGODB_URI)
         fetchIsBankRates(),
         fetchSilkRates(),
         fetchProcreditRates(),
-        fetchLeaderRates()
+        fetchLeaderRates(),
+        fetchSmartiRates(),
+        fetchCentralRates(),
+        fetchGeorgianCreditRates(),
+        fetchTbmcRates(),
+        fetchBermeliRates(),
+        fetchAlphaExpressRates(),
+        fetchScappRates(),
+        fetchExpressLombardRates()
       ]);
       
       console.log('✅ კურსების განახლება დასრულდა!');
     });
 
-    // Fuel prices cron job (runs every 10 minutes)
-    cron.schedule('*/10 * * * *', async () => {
+    // Fuel prices change slowly, so refresh them once per day.
+    cron.schedule('15 4 * * *', async () => {
       console.log('⛽ ვიწყებ საწვავის ფასების განახლებას (Cron Job)...');
       await fetchAllGasPrices();
       console.log('✅ საწვავის ფასების განახლება დასრულდა!');
+    }, {
+      timezone: 'Asia/Tbilisi'
     });
   })
   .catch(err => console.error('❌ MongoDB-სთან დაკავშირების შეცდომა:', err));

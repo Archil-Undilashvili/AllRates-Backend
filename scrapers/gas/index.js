@@ -4,6 +4,8 @@ const fetchSocarGasPrices = require('./socar');
 const fetchRompetrolGasPrices = require('./rompetrol');
 const fetchLukoilGasPrices = require('./lukoil');
 const fetchPortalGasPrices = require('./portal');
+const fetchConnectGasPrices = require('./connect');
+const fetchNeogasGasPrices = require('./neogas');
 
 const SCRAPERS = [
   { company: 'Gulf', fetcher: fetchGulfGasPrices },
@@ -11,7 +13,9 @@ const SCRAPERS = [
   { company: 'Socar', fetcher: fetchSocarGasPrices },
   { company: 'Rompetrol', fetcher: fetchRompetrolGasPrices },
   { company: 'Lukoil', fetcher: fetchLukoilGasPrices },
-  { company: 'Portal', fetcher: fetchPortalGasPrices }
+  { company: 'Portal', fetcher: fetchPortalGasPrices },
+  { company: 'Connect', fetcher: fetchConnectGasPrices },
+  { company: 'Neogas', fetcher: fetchNeogasGasPrices }
 ];
 
 async function fetchAllGasPrices() {
@@ -45,3 +49,5 @@ module.exports.fetchSocarGasPrices = fetchSocarGasPrices;
 module.exports.fetchRompetrolGasPrices = fetchRompetrolGasPrices;
 module.exports.fetchLukoilGasPrices = fetchLukoilGasPrices;
 module.exports.fetchPortalGasPrices = fetchPortalGasPrices;
+module.exports.fetchConnectGasPrices = fetchConnectGasPrices;
+module.exports.fetchNeogasGasPrices = fetchNeogasGasPrices;

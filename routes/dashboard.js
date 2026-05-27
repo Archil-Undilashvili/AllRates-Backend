@@ -3,25 +3,49 @@ const router = express.Router();
 const UserDashboard = require('../models/UserDashboard');
 const { verifyToken } = require('../middleware/auth');
 
-const SLOT_KEYS = ['company', 'forex', 'crypto', 'asset'];
+const SLOT_KEYS = [
+    'company-usd',
+    'company-eur',
+    'company-gbp',
+    'company-rub',
+    'company-try',
+    'market',
+    'official',
+    'forex',
+    'crypto',
+    'asset'
+];
+
+const DEFAULT_FILTERS = SLOT_KEYS.reduce((filters, key) => {
+    filters[key] = key === 'company-usd';
+    return filters;
+}, {});
+
+const DEFAULT_ITEMS = SLOT_KEYS.reduce((items, key) => {
+    items[key] = [];
+    return items;
+}, {});
 
 function normalizeDashboardPayload(body = {}) {
     const filters = {};
     const items = {};
+    const order = Array.isArray(body.order)
+        ? body.order.map(value => String(value)).filter(value => SLOT_KEYS.includes(value)).slice(0, SLOT_KEYS.length)
+        : [];
 
     SLOT_KEYS.forEach(key => {
         filters[key] = body.filters && typeof body.filters[key] === 'boolean'
             ? body.filters[key]
-            : true;
+            : DEFAULT_FILTERS[key];
 
         items[key] = Array.isArray(body.items && body.items[key])
             ? body.items[key].map(value => String(value)).filter(Boolean).slice(0, 80)
             : [];
     });
 
-    if (!Object.values(filters).some(Boolean)) filters.company = true;
+    if (!Object.values(filters).some(Boolean)) filters['company-usd'] = true;
 
-    return { filters, items };
+    return { filters, items, order };
 }
 
 router.get('/', verifyToken, async (req, res) => {
@@ -29,14 +53,16 @@ router.get('/', verifyToken, async (req, res) => {
         const dashboard = await UserDashboard.findOne({ userId: req.user.userId });
         if (!dashboard) {
             return res.json({
-                filters: { company: true, forex: true, crypto: true, asset: true },
-                items: { company: [], forex: [], crypto: [], asset: [] }
+                filters: DEFAULT_FILTERS,
+                items: DEFAULT_ITEMS,
+                order: SLOT_KEYS
             });
         }
 
         res.json({
-            filters: dashboard.filters,
-            items: dashboard.items,
+            filters: { ...DEFAULT_FILTERS, ...(dashboard.filters || {}) },
+            items: { ...DEFAULT_ITEMS, ...(dashboard.items || {}) },
+            order: Array.isArray(dashboard.order) && dashboard.order.length ? dashboard.order : SLOT_KEYS,
             updatedAt: dashboard.updatedAt
         });
     } catch (error) {
@@ -59,6 +85,7 @@ router.put('/', verifyToken, async (req, res) => {
             dashboard: {
                 filters: dashboard.filters,
                 items: dashboard.items,
+                order: dashboard.order,
                 updatedAt: dashboard.updatedAt
             }
         });
