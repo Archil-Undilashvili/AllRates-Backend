@@ -25,6 +25,8 @@ const gasPriceSchema = new mongoose.Schema({
   timestamps: true
 });
 
+gasPriceSchema.index({ company: 1, createdAt: -1 });
+
 gasPriceSchema.pre('save', function() {
   const now = new Date();
   this.fetchedAt = now;
