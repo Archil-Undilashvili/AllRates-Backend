@@ -42,6 +42,8 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const dashboardRoutes = require('./routes/dashboard');
 const gasRoutes = require('./routes/gas');
+const alertRoutes = require('./routes/alerts');
+const { processRateAlerts } = require('./services/alertProcessor');
 
 const app = express();
 app.use(cors());
@@ -54,6 +56,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/gas', gasRoutes);
+app.use('/api/alerts', alertRoutes);
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -101,6 +104,12 @@ mongoose.connect(MONGODB_URI)
       ]);
       
       console.log('✅ კურსების განახლება დასრულდა!');
+      try {
+        const alertResult = await processRateAlerts();
+        if (alertResult.sent) console.log(`📩 გაიგზავნა ${alertResult.sent} alert იმეილი`);
+      } catch (alertError) {
+        console.error('⚠️ Alert-ების შემოწმების შეცდომა:', alertError.message);
+      }
     });
 
     // Fuel prices change slowly, so refresh them once per day.
