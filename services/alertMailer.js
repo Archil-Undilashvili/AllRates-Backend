@@ -5,12 +5,16 @@ dns.setDefaultResultOrder('ipv4first');
 
 const ALERT_EMAIL_USER = process.env.EMAIL_USER || 'g.undilashvili1993@gmail.com';
 const ALERT_EMAIL_PASS = process.env.EMAIL_PASS || '';
+const ALERT_EMAIL_HOST = process.env.EMAIL_HOST || '142.251.127.108';
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
+  host: ALERT_EMAIL_HOST,
   port: 465,
   secure: true,
   family: 4,
+  tls: {
+    servername: 'smtp.gmail.com'
+  },
   connectionTimeout: 15000,
   greetingTimeout: 15000,
   socketTimeout: 20000,
