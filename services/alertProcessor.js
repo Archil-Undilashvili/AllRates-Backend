@@ -16,6 +16,19 @@ let forexCache = { fetchedAt: 0, rates: new Map() };
 let cryptoCache = { fetchedAt: 0, rates: new Map() };
 let assetCache = { fetchedAt: 0, rates: new Map() };
 
+const COINGECKO_CRYPTO_IDS = {
+  BTC: 'bitcoin',
+  ETH: 'ethereum',
+  USDT: 'tether',
+  BNB: 'binancecoin',
+  SOL: 'solana',
+  XRP: 'ripple',
+  DOGE: 'dogecoin',
+  ADA: 'cardano',
+  TON: 'toncoin',
+  USDC: 'usd-coin'
+};
+
 const PAIR_FIELD_MAP = {
   USDGEL: { buy: 'usdBuy', sell: 'usdSell' },
   EURGEL: { buy: 'eurBuy', sell: 'eurSell' },
@@ -96,15 +109,45 @@ async function loadCryptoRates() {
     return cryptoCache.rates;
   }
 
-  const response = await axios.get('https://api.binance.com/api/v3/ticker/24hr', { timeout: 15000 });
-  const rows = Array.isArray(response.data) ? response.data : [];
   const rates = new Map();
 
-  rows.forEach(item => {
-    const pair = String(item.symbol || '').trim().toUpperCase();
-    const rate = Number(item.lastPrice);
-    if (pair.endsWith('USDT') && Number.isFinite(rate)) rates.set(pair, rate);
-  });
+  try {
+    const response = await axios.get('https://api.binance.com/api/v3/ticker/24hr', { timeout: 15000 });
+    const rows = Array.isArray(response.data) ? response.data : [];
+    rows.forEach(item => {
+      const pair = String(item.symbol || '').trim().toUpperCase();
+      const rate = Number(item.lastPrice);
+      if (pair.endsWith('USDT') && Number.isFinite(rate)) rates.set(pair, rate);
+    });
+  } catch (error) {
+    console.warn('Binance crypto alert source failed, using CoinGecko fallback:', error.message);
+  }
+
+  const missingFallbackPairs = Object.keys(COINGECKO_CRYPTO_IDS)
+    .map(symbol => `${symbol}USDT`)
+    .filter(pair => !rates.has(pair));
+
+  if (missingFallbackPairs.length) {
+    const ids = [...new Set(missingFallbackPairs.map(pair => COINGECKO_CRYPTO_IDS[pair.replace('USDT', '')]).filter(Boolean))];
+    if (ids.length) {
+      const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+        timeout: 15000,
+        params: {
+          ids: ids.join(','),
+          vs_currencies: 'usd'
+        }
+      });
+
+      Object.entries(COINGECKO_CRYPTO_IDS).forEach(([symbol, id]) => {
+        const rate = Number(response.data?.[id]?.usd);
+        if (Number.isFinite(rate)) rates.set(`${symbol}USDT`, rate);
+      });
+    }
+  }
+
+  if (!rates.size) {
+    throw new Error('Crypto alert rates unavailable');
+  }
 
   cryptoCache = { fetchedAt: now, rates };
   return rates;
