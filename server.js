@@ -60,6 +60,20 @@ app.use('/api/alerts', alertRoutes);
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
+let alertProcessingInProgress = false;
+
+async function runAlertProcessing(source) {
+  if (alertProcessingInProgress) return;
+  alertProcessingInProgress = true;
+  try {
+    const alertResult = await processRateAlerts();
+    if (alertResult.sent) console.log(`📩 გაიგზავნა ${alertResult.sent} alert იმეილი (${source})`);
+  } catch (alertError) {
+    console.error(`⚠️ Alert-ების შემოწმების შეცდომა (${source}):`, alertError.message);
+  } finally {
+    alertProcessingInProgress = false;
+  }
+}
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
@@ -104,12 +118,10 @@ mongoose.connect(MONGODB_URI)
       ]);
       
       console.log('✅ კურსების განახლება დასრულდა!');
-      try {
-        const alertResult = await processRateAlerts();
-        if (alertResult.sent) console.log(`📩 გაიგზავნა ${alertResult.sent} alert იმეილი`);
-      } catch (alertError) {
-        console.error('⚠️ Alert-ების შემოწმების შეცდომა:', alertError.message);
-      }
+    });
+
+    cron.schedule('* * * * *', async () => {
+      await runAlertProcessing('cron');
     });
 
     // Fuel prices change slowly, so refresh them once per day.

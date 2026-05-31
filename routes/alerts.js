@@ -22,11 +22,13 @@ function normalizeAlertPayload(body = {}) {
   const requestedType = String(body.alertType || '').trim().toLowerCase();
   const companyKey = String(body.companyKey || '').trim().toLowerCase();
   const companyName = String(body.companyName || '').trim();
-  const pair = String(body.pair || '').trim().toUpperCase();
+  const rawPair = String(body.pair || '').trim();
+  const normalizedPair = rawPair.toUpperCase();
   const looksLikeMarketAlert = String(body.side || '').trim() === 'rate'
-    || (!companyKey && !companyName && pair && !ALLOWED_PAIRS.includes(pair))
+    || (!companyKey && !companyName && normalizedPair && !ALLOWED_PAIRS.includes(normalizedPair))
     || ['FOREX', 'CRYPTO', 'ASSET'].includes(companyName.toUpperCase());
   const alertType = requestedType || (looksLikeMarketAlert ? 'forex' : 'company');
+  const pair = alertType === 'asset' ? rawPair : normalizedPair;
   const side = String(body.side || (MARKET_ALERT_TYPES.includes(alertType) ? 'rate' : '')).trim();
   const operator = String(body.operator || '').trim();
   const targetRate = Number(body.targetRate);

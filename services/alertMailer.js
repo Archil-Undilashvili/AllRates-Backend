@@ -1,30 +1,56 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns');
+const { promisify } = require('util');
 
 dns.setDefaultResultOrder('ipv4first');
 
 const ALERT_EMAIL_USER = process.env.EMAIL_USER || 'g.undilashvili1993@gmail.com';
 const ALERT_EMAIL_PASS = process.env.EMAIL_PASS || '';
-const ALERT_EMAIL_HOST = process.env.EMAIL_HOST || '142.251.127.108';
-const ALERT_EMAIL_PORT = Number(process.env.EMAIL_PORT || 587);
+const EMAIL_CONNECTION_TIMEOUT = Number(process.env.EMAIL_CONNECTION_TIMEOUT || 30000);
+const lookup4 = promisify(dns.lookup);
 
-const transporter = nodemailer.createTransport({
-  host: ALERT_EMAIL_HOST,
-  port: ALERT_EMAIL_PORT,
-  secure: ALERT_EMAIL_PORT === 465,
-  requireTLS: ALERT_EMAIL_PORT !== 465,
-  family: 4,
-  tls: {
-    servername: 'smtp.gmail.com'
-  },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 20000,
-  auth: {
-    user: ALERT_EMAIL_USER,
-    pass: ALERT_EMAIL_PASS
+async function gmailTransportConfigs() {
+  const configs = [];
+  const add = (host, port = 587, servername = 'smtp.gmail.com') => {
+    if (!host || configs.some(item => item.host === host && item.port === port)) return;
+    configs.push({ host, port, servername });
+  };
+
+  add(process.env.EMAIL_HOST, Number(process.env.EMAIL_PORT || 587));
+  add('smtp.gmail.com', 587);
+  add('gmail-smtp-msa.l.google.com', 587);
+
+  for (const host of ['smtp.gmail.com', 'gmail-smtp-msa.l.google.com']) {
+    try {
+      const resolved = await lookup4(host, { family: 4 });
+      add(resolved.address, 587, host === 'smtp.gmail.com' ? 'smtp.gmail.com' : 'gmail-smtp-msa.l.google.com');
+    } catch (error) {
+      console.warn(`Gmail SMTP IPv4 resolve failed (${host}):`, error.message);
+    }
   }
-});
+
+  return configs;
+}
+
+function createTransporter({ host, port, servername }) {
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    requireTLS: port !== 465,
+    family: 4,
+    tls: {
+      servername
+    },
+    connectionTimeout: EMAIL_CONNECTION_TIMEOUT,
+    greetingTimeout: EMAIL_CONNECTION_TIMEOUT,
+    socketTimeout: EMAIL_CONNECTION_TIMEOUT,
+    auth: {
+      user: ALERT_EMAIL_USER,
+      pass: ALERT_EMAIL_PASS
+    }
+  });
+}
 
 function buildAlertEmail({ alert, currentRate }) {
   const directionText = alert.operator === 'gt' ? 'აღემატება' : 'ნაკლებია';
@@ -63,10 +89,23 @@ async function sendRateAlertEmail({ to, alert, currentRate }) {
   }
 
   const mail = buildAlertEmail({ alert, currentRate });
-  await transporter.sendMail({
-    ...mail,
-    to
-  });
+  const configs = await gmailTransportConfigs();
+  let lastError;
+
+  for (const config of configs) {
+    try {
+      await createTransporter(config).sendMail({
+        ...mail,
+        to
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      console.warn(`Alert email transport failed (${config.host}:${config.port}):`, error.message);
+    }
+  }
+
+  throw lastError || new Error('Alert email transport unavailable');
 }
 
 module.exports = {

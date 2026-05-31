@@ -81,6 +81,12 @@ function normalizeSheetRows(raw) {
   return Array.isArray(raw) ? raw : [];
 }
 
+function parseNumber(value) {
+  if (typeof value === 'number') return value;
+  const normalized = String(value || '').replace(/,/g, '').trim();
+  return Number(normalized);
+}
+
 async function loadForexRates() {
   const now = Date.now();
   if (now - forexCache.fetchedAt < 55_000 && forexCache.rates.size) {
@@ -165,7 +171,7 @@ async function loadAssetRates() {
 
   rows.forEach(row => {
     const name = String(row.MEA || '').trim();
-    const rate = Number(row['Rate (MEA)']);
+    const rate = parseNumber(row['Rate (MEA)']);
     if (name && Number.isFinite(rate)) rates.set(name.toUpperCase(), rate);
   });
 
@@ -246,7 +252,12 @@ async function processRateAlerts() {
     const user = await User.findById(alert.userId);
     if (!user?.email) continue;
 
-    await sendRateAlertEmail({ to: user.email, alert, currentRate });
+    try {
+      await sendRateAlertEmail({ to: user.email, alert, currentRate });
+    } catch (error) {
+      console.error(`Alert email send failed (${alert.alertType}:${alert.pair}):`, error.message);
+      continue;
+    }
 
     alert.status = 'triggered';
     alert.triggeredAt = new Date();
