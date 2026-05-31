@@ -6,11 +6,13 @@ dns.setDefaultResultOrder('ipv4first');
 const ALERT_EMAIL_USER = process.env.EMAIL_USER || 'g.undilashvili1993@gmail.com';
 const ALERT_EMAIL_PASS = process.env.EMAIL_PASS || '';
 const ALERT_EMAIL_HOST = process.env.EMAIL_HOST || '142.251.127.108';
+const ALERT_EMAIL_PORT = Number(process.env.EMAIL_PORT || 587);
 
 const transporter = nodemailer.createTransport({
   host: ALERT_EMAIL_HOST,
-  port: 465,
-  secure: true,
+  port: ALERT_EMAIL_PORT,
+  secure: ALERT_EMAIL_PORT === 465,
+  requireTLS: ALERT_EMAIL_PORT !== 465,
   family: 4,
   tls: {
     servername: 'smtp.gmail.com'
