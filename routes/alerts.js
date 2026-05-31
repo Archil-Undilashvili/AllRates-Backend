@@ -2,12 +2,21 @@ const express = require('express');
 const router = express.Router();
 const RateAlert = require('../models/RateAlert');
 const { verifyToken } = require('../middleware/auth');
+const { processRateAlerts } = require('../services/alertProcessor');
 
 const ALLOWED_PAIRS = ['USDGEL', 'EURGEL', 'GBPGEL', 'RUBGEL', 'TRYGEL'];
 const ALLOWED_SIDES = ['buy', 'sell'];
 const ALLOWED_OPERATORS = ['lt', 'gt'];
 const MAX_ALERTS_PER_USER = 10;
 const MARKET_ALERT_TYPES = ['forex', 'crypto', 'asset'];
+
+function scheduleAlertProcessing(reason) {
+  setTimeout(() => {
+    processRateAlerts().catch(error => {
+      console.error(`Alert-ების background შემოწმების შეცდომა (${reason}):`, error.message);
+    });
+  }, 0);
+}
 
 function normalizeAlertPayload(body = {}) {
   const requestedType = String(body.alertType || '').trim().toLowerCase();
@@ -70,6 +79,7 @@ router.post('/', verifyToken, async (req, res) => {
       userId: req.user.userId,
       ...payload
     });
+    scheduleAlertProcessing('create');
     res.status(201).json({ alert });
   } catch (error) {
     res.status(400).json({ message: error.message || 'Alert-ის შექმნა ვერ მოხერხდა' });
@@ -87,6 +97,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     const payload = normalizeAlertPayload(req.body);
     Object.assign(current, payload);
     await current.save();
+    scheduleAlertProcessing('update');
     res.json({ alert: current });
   } catch (error) {
     res.status(400).json({ message: error.message || 'Alert-ის შენახვა ვერ მოხერხდა' });
