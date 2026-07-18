@@ -47,6 +47,7 @@ const marketHistoryRoutes = require('./routes/marketHistory');
 const sheetsRoutes = require('./routes/sheets');
 const { processRateAlerts } = require('./services/alertProcessor');
 const { syncMarketHistory } = require('./services/marketHistorySync');
+const { getSheetsCache } = require('./services/sheetsCache');
 
 const app = express();
 app.use(cors());
@@ -68,6 +69,19 @@ const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 let alertProcessingInProgress = false;
 let marketHistorySyncInProgress = false;
+
+async function getLatestCompanyRates() {
+  return Rate.aggregate([
+    // ჯერ ვასორტირებთ კლებადობით (ყველაზე ახალი პირველი იყოს)
+    { $sort: { createdAt: -1 } },
+    // ვაჯგუფებთ კომპანიების მიხედვით და თითოეულისთვის ვიღებთ მხოლოდ პირველს (ყველაზე ახალს)
+    { $group: { _id: "$company", latestRecord: { $first: "$$ROOT" } } },
+    // ჯგუფის სტრუქტურის მაგივრად პირდაპირ დოკუმენტებს ვწევთ ზევით
+    { $replaceRoot: { newRoot: "$latestRecord" } },
+    // ვასორტირებთ ანბანის მიხედვით
+    { $sort: { company: 1 } }
+  ]);
+}
 
 async function runAlertProcessing(source) {
   if (alertProcessingInProgress) return;
@@ -179,20 +193,44 @@ app.get('/api/health', (req, res) => {
 // GET /api/rates/latest - აბრუნებს ყველა კომპანიის ბოლო განახლებულ კურსს
 app.get('/api/rates/latest', async (req, res) => {
   try {
-    const latestRates = await Rate.aggregate([
-      // ჯერ ვასორტირებთ კლებადობით (ყველაზე ახალი პირველი იყოს)
-      { $sort: { createdAt: -1 } },
-      // ვაჯგუფებთ კომპანიების მიხედვით და თითოეულისთვის ვიღებთ მხოლოდ პირველს (ყველაზე ახალს)
-      { $group: { _id: "$company", latestRecord: { $first: "$$ROOT" } } },
-      // ჯგუფის სტრუქტურის მაგივრად პირდაპირ დოკუმენტებს ვწევთ ზევით
-      { $replaceRoot: { newRoot: "$latestRecord" } },
-      // ვასორტირებთ ანბანის მიხედვით
-      { $sort: { company: 1 } }
-    ]);
-    
+    const latestRates = await getLatestCompanyRates();
     res.json(latestRates);
   } catch (error) {
     console.error("API შეცდომა (latest rates):", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get('/api/unified', async (req, res) => {
+  try {
+    const [sheetsCache, companyRates] = await Promise.all([
+      getSheetsCache(),
+      getLatestCompanyRates()
+    ]);
+
+    res.json({
+      updatedAt: new Date().toISOString(),
+      sources: {
+        googleSheet: {
+          endpoint: '/api/data',
+          range: sheetsCache.range,
+          source: sheetsCache.source,
+          updatedAt: sheetsCache.updatedAt,
+          error: sheetsCache.error || null
+        },
+        companyRates: {
+          endpoint: '/api/rates/latest',
+          source: 'mongodb:scrapers',
+          count: companyRates.length
+        }
+      },
+      googleSheet: {
+        data: sheetsCache.data || []
+      },
+      companyRates
+    });
+  } catch (error) {
+    console.error("API შეცდომა (unified data):", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
