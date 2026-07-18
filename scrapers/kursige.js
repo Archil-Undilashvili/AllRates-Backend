@@ -2,7 +2,6 @@ const axios = require('axios');
 const Rate = require('../models/Rate');
 
 const KURSIGE_URL = 'https://api.kursi.ge:8080/api/public/currencies';
-const SHEETS_FALLBACK_URL = 'https://sheets-api-production-c989.up.railway.app/api/data';
 const SUPPORTED_PAIRS = {
   usd: ['GEL', 'USD'],
   eur: ['GEL', 'EUR'],
@@ -58,58 +57,13 @@ async function fetchRowsFromKursigeApi() {
   return getRows(data);
 }
 
-async function fetchRowsFromSheetsFallback() {
-  const { data } = await axios.get(SHEETS_FALLBACK_URL, {
-    timeout: 10000,
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'AllRates.ge/1.0'
-    }
-  });
-
-  const table = Array.isArray(data?.data) ? data.data : [];
-  const headers = table[0] || [];
-  const kursigeRow = table.find(row => normalizeCode(row?.[0]) === 'KURSIGE');
-
-  if (!kursigeRow) return [];
-
-  const column = (name) => headers.findIndex(header => normalizeCode(header) === normalizeCode(name));
-  const value = (name) => {
-    const index = column(name);
-    return index >= 0 ? kursigeRow[index] : null;
-  };
-
-  return [
-    {
-      baseCurrencyCode: 'GEL',
-      secondaryCurrencyCode: 'USD',
-      buyRate: value('USDGEL (Buy)'),
-      sellRate: value('USDGEL (Sell)')
-    },
-    {
-      baseCurrencyCode: 'GEL',
-      secondaryCurrencyCode: 'EUR',
-      buyRate: value('EURGEL (Buy)'),
-      sellRate: value('EURGEL (Sell)')
-    },
-    {
-      baseCurrencyCode: 'GEL',
-      secondaryCurrencyCode: 'RUB',
-      buyRate: value('RUBGEL (Buy)'),
-      sellRate: value('RUBGEL (Sell)')
-    }
-  ];
-}
-
 async function fetchCurrencyRows() {
   try {
     const rows = await fetchRowsFromKursigeApi();
     if (rows.length) return rows;
     throw new Error('Kursige API returned no rows');
   } catch (error) {
-    console.warn(`[Kursige] primary API failed, trying sheets fallback: ${error.message}`);
-    const fallbackRows = await fetchRowsFromSheetsFallback();
-    if (fallbackRows.length) return fallbackRows;
+    console.warn(`[Kursige] API failed: ${error.message}`);
     throw error;
   }
 }

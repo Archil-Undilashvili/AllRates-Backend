@@ -3,8 +3,8 @@ const RateAlert = require('../models/RateAlert');
 const User = require('../models/User');
 const axios = require('axios');
 const { sendRateAlertEmail } = require('./alertMailer');
+const { getSheetsCache } = require('./sheetsCache');
 
-const SHEETS_API_URL = process.env.SHEETS_API_URL || 'https://sheets-api-production-c989.up.railway.app/api/data';
 const FOREX_PAIR_COLUMNS = [
   ['Pair (Popular)', 'Rate (Popular)'],
   ['Pair (vs USD)', 'Rate (vs USD)'],
@@ -81,6 +81,14 @@ function normalizeSheetRows(raw) {
   return Array.isArray(raw) ? raw : [];
 }
 
+async function loadSheetRows() {
+  const cache = await getSheetsCache();
+  if (!cache.data) {
+    throw new Error(cache.error || 'Sheets data unavailable');
+  }
+  return normalizeSheetRows({ data: cache.data });
+}
+
 function parseNumber(value) {
   if (typeof value === 'number') return value;
   const normalized = String(value || '').replace(/,/g, '').trim();
@@ -93,8 +101,7 @@ async function loadForexRates() {
     return forexCache.rates;
   }
 
-  const response = await axios.get(SHEETS_API_URL, { timeout: 15000 });
-  const rows = normalizeSheetRows(response.data);
+  const rows = await loadSheetRows();
   const rates = new Map();
 
   rows.forEach(row => {
@@ -165,8 +172,7 @@ async function loadAssetRates() {
     return assetCache.rates;
   }
 
-  const response = await axios.get(SHEETS_API_URL, { timeout: 15000 });
-  const rows = normalizeSheetRows(response.data);
+  const rows = await loadSheetRows();
   const rates = new Map();
 
   rows.forEach(row => {

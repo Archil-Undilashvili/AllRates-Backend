@@ -43,7 +43,10 @@ const adminRoutes = require('./routes/admin');
 const dashboardRoutes = require('./routes/dashboard');
 const gasRoutes = require('./routes/gas');
 const alertRoutes = require('./routes/alerts');
+const marketHistoryRoutes = require('./routes/marketHistory');
+const sheetsRoutes = require('./routes/sheets');
 const { processRateAlerts } = require('./services/alertProcessor');
+const { syncMarketHistory } = require('./services/marketHistorySync');
 
 const app = express();
 app.use(cors());
@@ -57,10 +60,14 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/gas', gasRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/market-history', marketHistoryRoutes);
+app.use('/api/sheets', sheetsRoutes.router);
+app.get('/api/data', sheetsRoutes.dataHandler);
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 let alertProcessingInProgress = false;
+let marketHistorySyncInProgress = false;
 
 async function runAlertProcessing(source) {
   if (alertProcessingInProgress) return;
@@ -75,10 +82,25 @@ async function runAlertProcessing(source) {
   }
 }
 
+async function runMarketHistorySync(source) {
+  if (marketHistorySyncInProgress) return;
+  marketHistorySyncInProgress = true;
+  try {
+    const result = await syncMarketHistory();
+    console.log(`📈 საბაზრო კურსების ისტორია განახლდა (${source}): ${result.fetched} rows, ${result.upserted} new`);
+  } catch (error) {
+    console.error(`⚠️ საბაზრო კურსების ისტორიის განახლების შეცდომა (${source}):`, error.message);
+  } finally {
+    marketHistorySyncInProgress = false;
+  }
+}
+
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ დაკავშირებულია MongoDB-სთან წარმატებით!');
+    sheetsRoutes.startSheetsCacheRefresh();
+    runMarketHistorySync('startup');
     
     // Start Cron Jobs (Runs every 1 minute)
     cron.schedule('* * * * *', async () => {
@@ -122,6 +144,12 @@ mongoose.connect(MONGODB_URI)
 
     cron.schedule('* * * * *', async () => {
       await runAlertProcessing('cron');
+    });
+
+    cron.schedule('*/30 * * * *', async () => {
+      await runMarketHistorySync('cron');
+    }, {
+      timezone: 'Asia/Tbilisi'
     });
 
     // Fuel prices change slowly, so refresh them once per day.
