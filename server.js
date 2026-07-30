@@ -24,7 +24,6 @@ const fetchTerabankRates = require('./scrapers/tera');
 const fetchHalykRates = require('./scrapers/halyk');
 const fetchIsBankRates = require('./scrapers/isbank');
 const fetchSilkRates = require('./scrapers/silk');
-const fetchProcreditRates = require("./scrapers/procredit");
 const fetchLeaderRates = require("./scrapers/leader");
 const fetchSmartiRates = require("./scrapers/smarti");
 const fetchCentralRates = require("./scrapers/central");
@@ -70,8 +69,15 @@ const MONGODB_URI = process.env.MONGODB_URI;
 let alertProcessingInProgress = false;
 let marketHistorySyncInProgress = false;
 
+function isInvalidCrystalTry(rate) {
+  const buy = Number(rate?.tryBuy);
+  const sell = Number(rate?.trySell);
+  if (!Number.isFinite(buy) || !Number.isFinite(sell)) return true;
+  return buy <= 0 || sell <= 0 || buy < 0.01 || sell < 0.01 || buy === sell;
+}
+
 async function getLatestCompanyRates() {
-  return Rate.aggregate([
+  const latestRates = await Rate.aggregate([
     // ჯერ ვასორტირებთ კლებადობით (ყველაზე ახალი პირველი იყოს)
     { $sort: { createdAt: -1 } },
     // ვაჯგუფებთ კომპანიების მიხედვით და თითოეულისთვის ვიღებთ მხოლოდ პირველს (ყველაზე ახალს)
@@ -81,6 +87,28 @@ async function getLatestCompanyRates() {
     // ვასორტირებთ ანბანის მიხედვით
     { $sort: { company: 1 } }
   ]);
+
+  return Promise.all(latestRates
+    .filter(rate => !String(rate.company || '').toLowerCase().includes('procredit'))
+    .map(async rate => {
+      if (!String(rate.company || '').toLowerCase().includes('crystal')) return rate;
+      const fixed = { ...rate };
+      if (Number(fixed.rubBuy) > 1) fixed.rubBuy = Number((Number(fixed.rubBuy) / 100).toFixed(4));
+      if (Number(fixed.rubSell) > 1) fixed.rubSell = Number((Number(fixed.rubSell) / 100).toFixed(4));
+
+      if (isInvalidCrystalTry(fixed)) {
+        try {
+          const liveCrystal = await fetchCrystalRates.getCurrentCrystalRates();
+          Object.assign(fixed, liveCrystal);
+        } catch (error) {
+          console.warn('⚠️ Crystal TRY live correction failed:', error.message);
+          fixed.tryBuy = null;
+          fixed.trySell = null;
+        }
+      }
+
+      return fixed;
+    }));
 }
 
 async function runAlertProcessing(source) {
@@ -141,7 +169,6 @@ mongoose.connect(MONGODB_URI)
         fetchHalykRates(),
         fetchIsBankRates(),
         fetchSilkRates(),
-        fetchProcreditRates(),
         fetchLeaderRates(),
         fetchSmartiRates(),
         fetchCentralRates(),
