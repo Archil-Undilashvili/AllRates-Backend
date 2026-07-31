@@ -1,13 +1,14 @@
 const axios = require('axios');
 const Rate = require('../models/Rate');
 
-const KURSIGE_URL = 'https://api.kursi.ge:8080/api/public/currencies';
+const KURSIGE_URLS = [
+  'https://api-core.kursi.ge/api/public/currencies',
+  'https://api.kursi.ge:8080/api/public/currencies'
+];
 const SUPPORTED_PAIRS = {
   usd: ['GEL', 'USD'],
   eur: ['GEL', 'EUR'],
-  gbp: ['GEL', 'GBP'],
-  rub: ['GEL', 'RUB'],
-  try: ['GEL', 'TRY']
+  rub: ['GEL', 'RUB']
 };
 
 function normalizeCode(value) {
@@ -44,17 +45,30 @@ function getPair(rows, [base, secondary]) {
 }
 
 async function fetchRowsFromKursigeApi() {
-  const { data } = await axios.get(KURSIGE_URL, {
-    timeout: 8000,
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'Mozilla/5.0 AllRates.ge/1.0',
-      Referer: 'https://kursi.ge/ka/',
-      Origin: 'https://kursi.ge'
-    }
-  });
+  let lastError = null;
 
-  return getRows(data);
+  for (const url of KURSIGE_URLS) {
+    try {
+      const { data } = await axios.get(url, {
+        timeout: 8000,
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Mozilla/5.0 AllRates.ge/1.0',
+          Referer: 'https://kursi.ge/ka/',
+          Origin: 'https://kursi.ge'
+        }
+      });
+
+      const rows = getRows(data);
+      if (rows.length) return rows;
+      lastError = new Error(`${url} returned no rows`);
+    } catch (error) {
+      lastError = error;
+      console.warn(`[Kursige] ${url} failed: ${error.message}`);
+    }
+  }
+
+  throw lastError || new Error('Kursige API returned no rows');
 }
 
 async function fetchCurrencyRows() {
@@ -95,12 +109,8 @@ async function fetchKursiRates() {
       usdSell: rates.usd.sell,
       eurBuy: rates.eur.buy,
       eurSell: rates.eur.sell,
-      gbpBuy: rates.gbp.buy,
-      gbpSell: rates.gbp.sell,
       rubBuy: rates.rub.buy,
       rubSell: rates.rub.sell,
-      tryBuy: rates.try.buy,
-      trySell: rates.try.sell,
       date: new Date()
     });
 
