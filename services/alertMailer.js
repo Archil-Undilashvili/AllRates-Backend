@@ -4,8 +4,11 @@ const { promisify } = require('util');
 
 dns.setDefaultResultOrder('ipv4first');
 
-const ALERT_EMAIL_USER = process.env.EMAIL_USER || 'g.undilashvili1993@gmail.com';
-const ALERT_EMAIL_PASS = process.env.EMAIL_PASS || '';
+const ALERT_EMAIL_USER = process.env.EMAIL_USER || 'info.allrates@gmail.com';
+const ALERT_EMAIL_AUTH_USER = process.env.EMAIL_AUTH_USER || ALERT_EMAIL_USER;
+const ALERT_EMAIL_PASS = String(process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
+const ALERT_EMAIL_FROM = process.env.EMAIL_FROM || `"AllRates.ge" <${ALERT_EMAIL_USER}>`;
+const ALERT_EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || ALERT_EMAIL_USER;
 const EMAIL_CONNECTION_TIMEOUT = Number(process.env.EMAIL_CONNECTION_TIMEOUT || 30000);
 const lookup4 = promisify(dns.lookup);
 
@@ -46,7 +49,7 @@ function createTransporter({ host, port, servername }) {
     greetingTimeout: EMAIL_CONNECTION_TIMEOUT,
     socketTimeout: EMAIL_CONNECTION_TIMEOUT,
     auth: {
-      user: ALERT_EMAIL_USER,
+      user: ALERT_EMAIL_AUTH_USER,
       pass: ALERT_EMAIL_PASS
     }
   });
@@ -56,28 +59,28 @@ function buildAlertEmail({ alert, currentRate }) {
   const directionText = alert.operator === 'gt' ? 'აღემატება' : 'ნაკლებია';
   if (alert.alertType === 'forex') {
     return {
-      from: ALERT_EMAIL_USER,
+      from: ALERT_EMAIL_FROM,
       subject: 'AllRates.ge Alert',
       text: `FOREX წყვილის ${alert.pair} მიმდინარე კურსი ${directionText} სამიზნე მაჩვენებელს.\nსამიზნე კურსი: ${alert.targetRate}\nმიმდინარე კურსი ${currentRate}`
     };
   }
   if (alert.alertType === 'crypto') {
     return {
-      from: ALERT_EMAIL_USER,
+      from: ALERT_EMAIL_FROM,
       subject: 'AllRates.ge Alert',
       text: `კრიპტოვალუტის ${alert.pair} მიმდინარე ფასი ${directionText} სამიზნე მაჩვენებელს.\nსამიზნე ფასი: ${alert.targetRate}\nმიმდინარე ფასი ${currentRate}`
     };
   }
   if (alert.alertType === 'asset') {
     return {
-      from: ALERT_EMAIL_USER,
+      from: ALERT_EMAIL_FROM,
       subject: 'AllRates.ge Alert',
       text: `აქტივის ${alert.pair} მიმდინარე ფასი ${directionText} სამიზნე მაჩვენებელს.\nსამიზნე ფასი: ${alert.targetRate}\nმიმდინარე ფასი ${currentRate}`
     };
   }
 
   return {
-    from: ALERT_EMAIL_USER,
+    from: ALERT_EMAIL_FROM,
     subject: 'AllRates.ge Alert',
     text: `კომპანია ${alert.companyName}-ს მიმდინარე კურსი ${directionText} სამიზნე მაჩვენებელს.\nსამიზნე კურსი: ${alert.targetRate}\nმიმდინარე კურსი ${currentRate}`
   };
@@ -96,7 +99,8 @@ async function sendRateAlertEmail({ to, alert, currentRate }) {
     try {
       await createTransporter(config).sendMail({
         ...mail,
-        to
+        to,
+        replyTo: ALERT_EMAIL_REPLY_TO
       });
       return;
     } catch (error) {
@@ -109,5 +113,12 @@ async function sendRateAlertEmail({ to, alert, currentRate }) {
 }
 
 module.exports = {
-  sendRateAlertEmail
+  sendRateAlertEmail,
+  getAlertMailerStatus: () => ({
+    user: ALERT_EMAIL_USER,
+    authUser: ALERT_EMAIL_AUTH_USER,
+    from: ALERT_EMAIL_FROM,
+    replyTo: ALERT_EMAIL_REPLY_TO,
+    hasPassword: Boolean(ALERT_EMAIL_PASS)
+  })
 };

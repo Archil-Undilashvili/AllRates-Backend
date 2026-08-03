@@ -36,6 +36,7 @@ const PAIR_FIELD_MAP = {
   RUBGEL: { buy: 'rubBuy', sell: 'rubSell' },
   TRYGEL: { buy: 'tryBuy', sell: 'trySell' }
 };
+const ALERT_PROCESS_BATCH_SIZE = Math.max(50, Number(process.env.ALERT_PROCESS_BATCH_SIZE || 500));
 
 function normalizeCompanyKey(value) {
   const raw = String(value || '').toLowerCase();
@@ -206,74 +207,99 @@ async function loadLatestRatesByCompany() {
 }
 
 async function processRateAlerts() {
-  const alerts = await RateAlert.find({ status: 'active' }).limit(200);
-  if (!alerts.length) return { checked: 0, sent: 0 };
+  const stats = { checked: 0, matched: 0, sent: 0, failed: 0, skippedMissingUser: 0 };
+  const userEmailCache = new Map();
+  let lastId = null;
 
-  const companyAlerts = alerts.filter(alert => (alert.alertType || 'company') === 'company');
-  const forexAlerts = alerts.filter(alert => alert.alertType === 'forex');
-  const cryptoAlerts = alerts.filter(alert => alert.alertType === 'crypto');
-  const assetAlerts = alerts.filter(alert => alert.alertType === 'asset');
-  const ratesByCompany = companyAlerts.length ? await loadLatestRatesByCompany() : new Map();
-  let forexRates = new Map();
-  let cryptoRates = new Map();
-  let assetRates = new Map();
-  if (forexAlerts.length) {
-    try {
-      forexRates = await loadForexRates();
-    } catch (error) {
-      console.error('FOREX alert rates fetch failed:', error.message);
+  while (true) {
+    const query = { status: 'active' };
+    if (lastId) query._id = { $gt: lastId };
+
+    const alerts = await RateAlert.find(query)
+      .sort({ _id: 1 })
+      .limit(ALERT_PROCESS_BATCH_SIZE);
+
+    if (!alerts.length) break;
+    lastId = alerts[alerts.length - 1]._id;
+    stats.checked += alerts.length;
+
+    const companyAlerts = alerts.filter(alert => (alert.alertType || 'company') === 'company');
+    const forexAlerts = alerts.filter(alert => alert.alertType === 'forex');
+    const cryptoAlerts = alerts.filter(alert => alert.alertType === 'crypto');
+    const assetAlerts = alerts.filter(alert => alert.alertType === 'asset');
+    const ratesByCompany = companyAlerts.length ? await loadLatestRatesByCompany() : new Map();
+    let forexRates = new Map();
+    let cryptoRates = new Map();
+    let assetRates = new Map();
+
+    if (forexAlerts.length) {
+      try {
+        forexRates = await loadForexRates();
+      } catch (error) {
+        console.error('FOREX alert rates fetch failed:', error.message);
+      }
+    }
+    if (cryptoAlerts.length) {
+      try {
+        cryptoRates = await loadCryptoRates();
+      } catch (error) {
+        console.error('Crypto alert rates fetch failed:', error.message);
+      }
+    }
+    if (assetAlerts.length) {
+      try {
+        assetRates = await loadAssetRates();
+      } catch (error) {
+        console.error('Asset alert rates fetch failed:', error.message);
+      }
+    }
+
+    for (const alert of alerts) {
+      let currentRate = NaN;
+      if (alert.alertType === 'forex') {
+        currentRate = Number(forexRates.get(alert.pair));
+      } else if (alert.alertType === 'crypto') {
+        currentRate = Number(cryptoRates.get(alert.pair));
+      } else if (alert.alertType === 'asset') {
+        currentRate = Number(assetRates.get(String(alert.pair || '').toUpperCase()));
+      } else {
+        const rate = ratesByCompany.get(alert.companyKey);
+        if (!rate) continue;
+        currentRate = getCurrentRate(rate, alert);
+      }
+      if (!isTriggered(alert, currentRate)) continue;
+      stats.matched += 1;
+
+      const userId = String(alert.userId || '');
+      let userEmail = userEmailCache.get(userId);
+      if (userEmail === undefined) {
+        const user = await User.findById(alert.userId).select('email').lean();
+        userEmail = user?.email || null;
+        userEmailCache.set(userId, userEmail);
+      }
+      if (!userEmail) {
+        stats.skippedMissingUser += 1;
+        continue;
+      }
+
+      try {
+        await sendRateAlertEmail({ to: userEmail, alert, currentRate });
+      } catch (error) {
+        stats.failed += 1;
+        console.error(`Alert email send failed (${alert.alertType}:${alert.pair}):`, error.message);
+        continue;
+      }
+
+      alert.status = 'triggered';
+      alert.triggeredAt = new Date();
+      alert.triggeredRate = currentRate;
+      alert.sentTo = userEmail;
+      await alert.save();
+      stats.sent += 1;
     }
   }
-  if (cryptoAlerts.length) {
-    try {
-      cryptoRates = await loadCryptoRates();
-    } catch (error) {
-      console.error('Crypto alert rates fetch failed:', error.message);
-    }
-  }
-  if (assetAlerts.length) {
-    try {
-      assetRates = await loadAssetRates();
-    } catch (error) {
-      console.error('Asset alert rates fetch failed:', error.message);
-    }
-  }
-  let sent = 0;
 
-  for (const alert of alerts) {
-    let currentRate = NaN;
-    if (alert.alertType === 'forex') {
-      currentRate = Number(forexRates.get(alert.pair));
-    } else if (alert.alertType === 'crypto') {
-      currentRate = Number(cryptoRates.get(alert.pair));
-    } else if (alert.alertType === 'asset') {
-      currentRate = Number(assetRates.get(String(alert.pair || '').toUpperCase()));
-    } else {
-      const rate = ratesByCompany.get(alert.companyKey);
-      if (!rate) continue;
-      currentRate = getCurrentRate(rate, alert);
-    }
-    if (!isTriggered(alert, currentRate)) continue;
-
-    const user = await User.findById(alert.userId);
-    if (!user?.email) continue;
-
-    try {
-      await sendRateAlertEmail({ to: user.email, alert, currentRate });
-    } catch (error) {
-      console.error(`Alert email send failed (${alert.alertType}:${alert.pair}):`, error.message);
-      continue;
-    }
-
-    alert.status = 'triggered';
-    alert.triggeredAt = new Date();
-    alert.triggeredRate = currentRate;
-    alert.sentTo = user.email;
-    await alert.save();
-    sent += 1;
-  }
-
-  return { checked: alerts.length, sent };
+  return stats;
 }
 
 module.exports = {
